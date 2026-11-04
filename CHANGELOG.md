@@ -1,5 +1,33 @@
 # Changelog
 
+## 2.5.0
+
+### Minor Changes
+
+- [#801](https://github.com/nansen-ai/nansen-cli/pull/801) [`c7446fb`](https://github.com/nansen-ai/nansen-cli/commit/c7446fb17e076d2cd2731b40efe3d58ffef7e280) Thanks [@kome12](https://github.com/kome12)! - `nansen alerts create` and `nansen alerts update` accept the webhook signing secret from `--webhook-secret-stdin` (pipe or redirected file) or the `NANSEN_WEBHOOK_SECRET` environment variable, so it no longer has to appear on the command line, in shell history or in the process list. `--webhook-secret` still works; it cannot be combined with `--webhook-secret-stdin`, and either flag overrides the environment variable, which is read only when `--webhook` is given. `--webhook-secret` with no value or an empty value is now rejected instead of being silently ignored.
+
+### Patch Changes
+
+- [#807](https://github.com/nansen-ai/nansen-cli/pull/807) [`a38b217`](https://github.com/nansen-ai/nansen-cli/commit/a38b217e11c4c0adcfc1e3dc42440223a459d43f) Thanks [@Snan0M](https://github.com/Snan0M)! - A `--paginate` result that mixes cached and live pages is no longer reported as a cache hit. The merged result kept page 1's `_meta.fromCache`/`cacheAge`, and telemetry's `from_cache` followed page 1's marker or the last page's cache state; both now say cached only when every page came from the cache.
+
+- [#797](https://github.com/nansen-ai/nansen-cli/pull/797) [`585ac67`](https://github.com/nansen-ai/nansen-cli/commit/585ac674b7cb46d1d5d851eb7afb499c0abdf47c) Thanks [@kome12](https://github.com/kome12)! - `perp positions` now shows each position's leverage and margin mode (`lev=1x cross`) next to the liquidation price, so a liquidation price on a low-leverage cross-margin position has context.
+
+- [#789](https://github.com/nansen-ai/nansen-cli/pull/789) [`5edcb66`](https://github.com/nansen-ai/nansen-cli/commit/5edcb662e7e0496d5f752f0a831feb3d0dbfc646) Thanks [@hulk-linus](https://github.com/apps/hulk-linus)! - Show API warning headers on stderr and preserve them on cached responses.
+
+- [#804](https://github.com/nansen-ai/nansen-cli/pull/804) [`ca8b77d`](https://github.com/nansen-ai/nansen-cli/commit/ca8b77dd10d437ac0b81cbb6583983d72500e86e) Thanks [@Ravan002](https://github.com/Ravan002)! - `wallet create` now rejects the names `config` (any case), `wc` and `walletconnect`. A wallet named `config` was saved as `wallets/config.json` and then overwritten by the wallet settings, losing its keys; `wc` and `walletconnect` are read as WalletConnect by `wallet send` and limit orders.
+
+- [#803](https://github.com/nansen-ai/nansen-cli/pull/803) [`622b684`](https://github.com/nansen-ai/nansen-cli/commit/622b6846ac0a9a6cb47834a81af0d1ce0338ddb4) Thanks [@kome12](https://github.com/kome12)! - Response cache (`--cache`) no longer grows without bound. After a cached write, entries older than 24 hours (or the longest `--cache-ttl` that run reads with, if longer) and temp files left by an interrupted write are removed, at most once an hour per run. `nansen cache clear` also removes those leftover temp files, but never one younger than 10 minutes, which may be a write in progress.
+
+- [#802](https://github.com/nansen-ai/nansen-cli/pull/802) [`28483ea`](https://github.com/nansen-ai/nansen-cli/commit/28483ea8f5bc0d98628ec552d6e5cf99a3023ae6) Thanks [@kome12](https://github.com/kome12)! - `nansen schema` no longer lists `research points leaderboard`, whose endpoint was removed, and now lists `--stream` (NDJSON output, alias `-s`) under global options. The points command is also left out of `nansen research` help and "did you mean" suggestions. Calling it, including with `--help`, still returns `COMMAND_UNAVAILABLE`.
+
+- [#805](https://github.com/nansen-ai/nansen-cli/pull/805) [`11558d5`](https://github.com/nansen-ai/nansen-cli/commit/11558d57ff4a52da3ef6a1856d3119a0df5dafe1) Thanks [@Ravan002](https://github.com/Ravan002)! - Telemetry events no longer include positional values in the command path. `nansen search vitalik.eth` was reported as `/search/vitalik.eth` and `nansen 0x…` as `/0x…`; only command and subcommand names the CLI defines are sent now, and an unknown command is reported as `unknown`.
+
+- [#808](https://github.com/nansen-ai/nansen-cli/pull/808) [`5bb3e75`](https://github.com/nansen-ai/nansen-cli/commit/5bb3e7546d974bd311825760dcd7270e1fb41895) Thanks [@kome12](https://github.com/kome12)! - Telemetry events now list only option names the CLI defines for the command being run (plus global options and built-in switches such as `--help`). Any other name is sent as `--<unknown>`. Previously a value that starts with `-` and is passed as a separate argument, as in `--webhook-secret -abc123`, was parsed as a flag and its text was sent as a flag name.
+
+- [#798](https://github.com/nansen-ai/nansen-cli/pull/798) [`9457798`](https://github.com/nansen-ai/nansen-cli/commit/9457798f1c69d7cc8e9753c07a8eed0bcd379e17) Thanks [@kome12](https://github.com/kome12)! - `wallet send --token` now accepts `USDC` and `USDT` on every chain it supports (`evm`/`ethereum`, `base`, `solana`) instead of failing with "Invalid params", and rejects any other non-address value with the accepted symbols. `wallet create --help`, `wallet send --help` and `nansen schema` now list every option (`--name`, `--provider`, `--human`, `--token`, `--wallet`, `--dry-run`) and explain that `wallet create` reads the password from `NANSEN_WALLET_PASSWORD` (it prompts only with `--human`) and saves it to the OS keychain or the `.credentials` fallback.
+
+- [#806](https://github.com/nansen-ai/nansen-cli/pull/806) [`3f61a36`](https://github.com/nansen-ai/nansen-cli/commit/3f61a36e151f2f12dcdca7828819e63c260f2540) Thanks [@Ravan002](https://github.com/Ravan002)! - WalletConnect x402 payments now bound the authorization's `validBefore`. A `maxTimeoutSeconds` sent as a string (`"60"`) was concatenated onto the current time, giving a `validBefore` thousands of years out, and a large number was used as is; the timeout is now read as a whole number of seconds and capped at one hour, the window the local signer uses.
+
 ## 2.4.0
 
 ### Minor Changes
